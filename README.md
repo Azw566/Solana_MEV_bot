@@ -1,9 +1,33 @@
-# [Solana MEV Bot](https://t.me/adam3322111)
-## Overview
-A high-frequency trading bot designed to identify and exploit arbitrage opportunities across various decentralized exchanges (DEXs) on the Solana blockchain [📞](https://t.me/adam3322111) [🌐](https://adam-sandler.vercel.app/).
-zeroslot + offline sign + advancenonce + jito tip + solana program enable sandwich
+# [Solana MEV Bot]
 
-## Features
+## Overview
+New coding project aiming at better understanding of the fundamentals of MEV trading using Solana
+I forked an already existing MEV bot to upgrade it and to sharpen real life skills. You rarely starts from zero, sometimes you have to understand the weaknesses of an existing program and to adapt to upgrade it.
+
+During this project, I'll slowly update this file to share the progress mad and expand my understanding of these new technologies
+
+Remarks and any kind of advices / warning concerning my methods are welcome
+
+## Objectives
+- Infrastructure & Latency
+[ ] Migrate from WebSockets to gRPC: Replace standard RPC WebSocket subscriptions with Yellowstone Geyser Plugin integration to stream account updates with minimal latency.
+
+[ ] Local State Mirroring: Eliminate RPC bottlenecks by maintaining a local cache of pool states (accounts) updated in real-time via gRPC streams.
+
+- Algorithm & Strategy
+[ ] Advanced Pathfinding: Upgrade the arbitrage calculation engine from simple 1-hop/2-hop detection to a graph-based approach (e.g., Bellman-Ford or SPFA) to identify complex circular trade opportunities.
+
+[ ] CLMM Precision: Refine the math logic for Concentrated Liquidity Market Makers (Orca Whirlpools, Raydium CLMM) to accurately calculate price impact and cross-tick traversals locally.
+
+- Execution & Safety
+[ ] Jito Bundles Integration: Implement Jito-Solana SDK to send transactions as bundles, guaranteeing atomic execution and protecting against sandwich attacks/failed gas fees.
+
+[ ] On-Chain Atomicity: Develop and deploy a custom Solana Program (smart contract) to act as a proxy, ensuring transactions revert if the final output amount is less than the input (slippage protection).
+
+- Code Performance
+[ ] Rust Optimizations: Refactor dyn Trait usage to Enums for static dispatch performance and optimize memory management for high-frequency loops.
+
+## Old Features
 
 - **Multi-DEX Support**: Works with Raydium, Orca Whirlpools, and Meteora DEXs
 - **Real-time Pool Monitoring**: Continuously scans for new liquidity pools
@@ -70,7 +94,7 @@ The bot includes several optimization features:
 The bot outputs:
 
 - Real-time progress bars
-- Detailed logs of arbitrage opportunities with emoji indicators (💦, 👀, 📊)
+- Detailed logs of arbitrage opportunities with emoji indicators 
 - JSON files with trade results
 - MongoDB integration for persistent storage and analysis
 
@@ -83,6 +107,7 @@ This is experimental software. Use at your own risk. The authors are not respons
 \`\`\`
 
 This Markdown file contains all the documentation you provided about the bot's configuration, performance optimization, monitoring capabilities, and disclaimer.
+
 
 
 
