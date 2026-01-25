@@ -74,8 +74,8 @@ pub fn calculate_arb(include_1hop: bool, include_2hop: bool, markets_arb: HashMa
     //     info!("Address: {}, DexLabel: {:?}, Liquidity: {:?}", market.id, market.dexLabel, market.liquidity);
     // }
     
-    println!("⚠️⚠️ ORCA Pool not sorted");
-    println!("⚠️⚠️ RAYDIUM_CLMM Pool not sorted");
+    println!(" ORCA Pool not sorted");
+    println!(" RAYDIUM_CLMM Pool not sorted");
 
     for (key, market) in markets_arb.clone() {
         match market.dexLabel {
@@ -108,7 +108,7 @@ pub fn calculate_arb(include_1hop: bool, include_2hop: bool, markets_arb: HashMa
             },
         }
     }
-    info!("👌 Included Markets: {}", sorted_markets_arb.len());
+    info!(" Included Markets: {}", sorted_markets_arb.len());
     
     let mut counts: HashMap<DexLabel, i32> = HashMap::new();
     counts.insert(DexLabel::ORCA, 0);
@@ -129,7 +129,7 @@ pub fn calculate_arb(include_1hop: bool, include_2hop: bool, markets_arb: HashMa
     info!("Numbers of RAYDIUM_CLMM markets: {}", counts[&DexLabel::RAYDIUM_CLMM]);
     info!("Numbers of METEORA markets: {}", counts[&DexLabel::METEORA]);
 
-    info!("🗑️  Excluded Markets: {}", excluded_markets_arb.len());
+    info!("  Excluded Markets: {}", excluded_markets_arb.len());
     let all_routes: Vec<Route> = compute_routes(sorted_markets_arb.clone());
 
     let all_paths: Vec<SwapPath> = generate_swap_paths(include_1hop, include_2hop, all_routes, tokens.clone());
@@ -162,8 +162,6 @@ pub fn generate_swap_paths(include_1hop: bool, include_2hop: bool, all_routes: V
     // let include_2hop = true;
     info!("Hops Settings | 1 Hop : {} | 2 Hops : {}", if include_1hop == true {"✅"} else {"❌"}, if include_2hop == true {"✅"} else {"❌"});
 
-    // On part du postulat que les pools de même jetons, du même Dex mais avec des fees différents peuvent avoir un prix différent,
-    // donc on peut créer des routes 
     let mut all_swap_paths: Vec<SwapPath> = Vec::new();
     let starting_routes: Vec<&Route> = all_routes.iter().filter(|route| route.tokenIn == tokens[0].address).collect();
 
@@ -216,7 +214,6 @@ pub fn generate_swap_paths(include_1hop: bool, include_2hop: bool, all_routes: V
     //Three hops
     // Sol -> token1 -> token2 -> token3 -> Sol
     
-    // Code here...
 
     return all_swap_paths;
 }
