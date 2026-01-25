@@ -13,7 +13,7 @@ Remarks and any kind of advices / warning concerning my methods are welcome
 
 [X] Migrate from WebSockets to gRPC: Replace standard RPC WebSocket subscriptions with Yellowstone Geyser Plugin integration to stream account updates with minimal latency.
 
-[ ] Local State Mirroring: Eliminate RPC bottlenecks by maintaining a local cache of pool states (accounts) updated in real-time via gRPC streams.
+[X] Local State Mirroring: Eliminate RPC bottlenecks by maintaining a local cache of pool states (accounts) updated in real-time via gRPC streams.
 
 - Algorithm & Strategy
 
@@ -111,6 +111,7 @@ This is experimental software. Use at your own risk. The authors are not respons
 \`\`\`
 
 This Markdown file contains all the documentation you provided about the bot's configuration, performance optimization, monitoring capabilities, and disclaimer.
+
 
 
 
