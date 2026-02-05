@@ -1,8 +1,13 @@
 use std::collections::{HashMap, HashSet};
-use log::{debug, info};
+use log::{debug, info, error};
 use crate::markets::types::{Dex, DexLabel, Market};
 use crate::arbitrage::types::{TokenInArb, Route, SwapPath};
 use crate::strategies::pools::get_fresh_pools;
+use crate::data::bellman_ford::ArbGraph;
+use crate::markets::meteora::simulate_route_meteora;
+use crate::markets::orca_whirpools::simulate_route_orca_whirpools;
+use crate::markets::raydium::simulate_route_raydium;
+use super::types::TokenInfos;
 
 pub async fn get_markets_arb(get_fresh_pools_bool: bool, restrict_sol_usdc: bool, dexs: Vec<Dex>, tokens: Vec<TokenInArb>) -> HashMap<String, Market> {
 
@@ -213,7 +218,149 @@ pub fn generate_swap_paths(include_1hop: bool, include_2hop: bool, all_routes: V
 
     //Three hops
     // Sol -> token1 -> token2 -> token3 -> Sol
-    
+
 
     return all_swap_paths;
+}
+
+/// Simulate every route individually with `reference_amount` and return
+/// a map of route_id -> exchange_rate (amount_out / amount_in).
+///
+/// This is the bridge between the on-chain simulation layer and the
+/// Bellman-Ford graph: each route is simulated once to obtain a realistic
+/// exchange rate that accounts for pool reserves, concentrated liquidity
+/// tick ranges, and fee structures.
+///
+/// Routes whose simulation fails (e.g. missing account data, unsupported DEX)
+/// are silently skipped and will be absent from the returned map, meaning
+/// they will be excluded from the Bellman-Ford graph.
+pub async fn compute_route_exchange_rates(
+    reference_amount: u64,
+    routes: &[Route],
+    markets: &HashMap<String, Market>,
+    tokens_infos: &HashMap<String, TokenInfos>,
+) -> HashMap<u32, f64> {
+    let mut rates: HashMap<u32, f64> = HashMap::new();
+
+    for route in routes {
+        let market = match markets.get(&route.pool_address) {
+            Some(m) => m,
+            None => continue,
+        };
+
+        let sim_result = match route.dex {
+            DexLabel::ORCA_WHIRLPOOLS => {
+                simulate_route_orca_whirpools(
+                    false,
+                    reference_amount,
+                    route.clone(),
+                    market.clone(),
+                    tokens_infos.clone(),
+                )
+                .await
+            }
+            DexLabel::RAYDIUM => {
+                simulate_route_raydium(
+                    false,
+                    reference_amount,
+                    route.clone(),
+                    market.clone(),
+                    tokens_infos.clone(),
+                )
+                .await
+            }
+            DexLabel::METEORA => {
+                simulate_route_meteora(
+                    false,
+                    reference_amount,
+                    route.clone(),
+                    market.clone(),
+                    tokens_infos.clone(),
+                )
+                .await
+            }
+            _ => continue,
+        };
+
+        match sim_result {
+            Ok((amount_out_str, _)) => {
+                if let Ok(amount_out) = amount_out_str.parse::<f64>() {
+                    if amount_out > 0.0 && reference_amount > 0 {
+                        rates.insert(route.id, amount_out / reference_amount as f64);
+                    }
+                }
+            }
+            Err(_) => {}
+        }
+    }
+
+    info!(
+        "Exchange rates computed for {}/{} routes",
+        rates.len(),
+        routes.len()
+    );
+    rates
+}
+
+/// Use Bellman-Ford to discover arbitrage cycles of any length up to `max_hops`.
+///
+/// This replaces the brute-force enumeration in `generate_swap_paths` with a
+/// graph-based approach that:
+/// - Finds **all** profitable round-trips, not just 1-hop and 2-hop
+/// - Runs in O(V * E) regardless of path length (vs O(E^k) for k-hop enumeration)
+/// - Automatically prioritises the most profitable cycles
+///
+/// # Workflow
+/// 1. Simulates each route individually to obtain exchange rates.
+/// 2. Builds a weighted directed graph (weight = -ln(rate)).
+/// 3. Runs Bellman-Ford from the base token to detect negative-weight cycles.
+/// 4. Returns the detected cycles as `SwapPath` objects, sorted by profitability.
+///
+/// The returned paths are **candidates** — they should still be validated with
+/// `simulate_path` using fresh account state before execution.
+///
+/// # Arguments
+/// * `reference_amount` - Input amount for rate estimation (e.g. 3_500_000_000 for 3.5 SOL)
+/// * `routes`           - All directional routes from `compute_routes`
+/// * `markets`          - Pool data with account state (from `get_fresh_accounts_states`)
+/// * `tokens`           - Tokens in the arbitrage set; `tokens[0]` is the base token
+/// * `tokens_infos`     - Token metadata (decimals, symbols)
+/// * `max_hops`         - Maximum intermediate tokens in a cycle (1, 2, 3, ...)
+pub async fn find_arbitrage_bellman_ford(
+    reference_amount: u64,
+    routes: &[Route],
+    markets: &HashMap<String, Market>,
+    tokens: &[TokenInArb],
+    tokens_infos: &HashMap<String, TokenInfos>,
+    max_hops: usize,
+) -> Vec<SwapPath> {
+    info!("Running Bellman-Ford arbitrage detection (max {} hops)...", max_hops);
+
+    // Phase 1: Compute exchange rates by simulating each route
+    let exchange_rates = compute_route_exchange_rates(
+        reference_amount,
+        routes,
+        markets,
+        tokens_infos,
+    )
+    .await;
+
+    if exchange_rates.is_empty() {
+        error!("No exchange rates computed — cannot build arbitrage graph");
+        return Vec::new();
+    }
+
+    // Phase 2: Build the weighted graph
+    let graph = ArbGraph::new(routes, &exchange_rates);
+    info!("Graph: {}", graph.summary());
+
+    // Phase 3: Detect negative-weight cycles (arbitrage opportunities)
+    let source_token = &tokens[0].address;
+    let paths = graph.find_arbitrage_cycles(source_token, max_hops);
+
+    info!(
+        "Bellman-Ford complete: {} candidate arbitrage paths found",
+        paths.len()
+    );
+    paths
 }
