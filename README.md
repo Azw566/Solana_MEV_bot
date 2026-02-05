@@ -11,13 +11,13 @@ Remarks and any kind of advices / warning concerning my methods are welcome
 ## Objectives
 - Infrastructure & Latency
 
-[X] Migrate from WebSockets to gRPC: Replace standard RPC WebSocket subscriptions with Yellowstone Geyser Plugin integration to stream account updates with minimal latency.
+✅ Migrate from WebSockets to gRPC: Replace standard RPC WebSocket subscriptions with Yellowstone Geyser Plugin integration to stream account updates with minimal latency.
 
-[X] Local State Mirroring: Eliminate RPC bottlenecks by maintaining a local cache of pool states (accounts) updated in real-time via gRPC streams.
+✅ Local State Mirroring: Eliminate RPC bottlenecks by maintaining a local cache of pool states (accounts) updated in real-time via gRPC streams.
 
 - Algorithm & Strategy
 
-[ ] Advanced Pathfinding: Upgrade the arbitrage calculation engine from simple 1-hop/2-hop detection to a graph-based approach (e.g., Bellman-Ford or SPFA) to identify complex circular trade opportunities.
+✅ Advanced Pathfinding: Upgrade the arbitrage calculation engine from simple 1-hop/2-hop detection to a graph-based approach (e.g., Bellman-Ford or SPFA) to identify complex circular trade opportunities.
 
 [ ] CLMM Precision: Refine the math logic for Concentrated Liquidity Market Makers (Orca Whirlpools, Raydium CLMM) to accurately calculate price impact and cross-tick traversals locally.
 
@@ -111,6 +111,7 @@ This is experimental software. Use at your own risk. The authors are not respons
 \`\`\`
 
 This Markdown file contains all the documentation you provided about the bot's configuration, performance optimization, monitoring capabilities, and disclaimer.
+
 
 
 
